@@ -1,10 +1,10 @@
 //+------------------------------------------------------------------+
 //|                                           CandlestickPatterns.mqh |
 //|                    Advanced Candlestick Pattern Recognition      |
-//|                        Based on Candleman Indicator Logic        |
+//|                       Jason.w.rusk@gmail.com                     |
 //+------------------------------------------------------------------+
-#property copyright "Copyright 2024, Your Company Ltd"
-#property link      "https://www.mql5.com"
+#property copyright "jason.w.rusk@gmail.com"
+
 
 #ifndef CANDLESTICKPATTERNS_MQH
 #define CANDLESTICKPATTERNS_MQH
@@ -12,7 +12,7 @@
 // Include Config.mqh for ENUM_SIGNAL_TYPE
 #include "Config.mqh"
 
-//--- Pattern types enum (from Candleman indicator)
+
 enum ENUM_CANDLE_PATTERN
 {
     PATTERN_NONE = 0,             // No pattern

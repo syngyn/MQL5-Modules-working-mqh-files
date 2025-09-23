@@ -1,9 +1,9 @@
 //+------------------------------------------------------------------+
 //|                                               SignalGenerator.mqh |
 //|                                          Signal Generation Class |
+//|                       Jason.w.rusk@gmail.com                     |
 //+------------------------------------------------------------------+
-#property copyright "Copyright 2024, Your Company Ltd"
-#property link      "https://www.mql5.com"
+#property copyright "jason.w.rusk@gmail.com"
 
 #ifndef SIGNALGENERATOR_MQH
 #define SIGNALGENERATOR_MQH
