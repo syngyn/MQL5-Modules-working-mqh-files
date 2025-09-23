@@ -1,9 +1,9 @@
 //+------------------------------------------------------------------+
 //|                                                        Utils.mqh |
 //|                                              Utility Functions  |
+//|                       Jason.w.rusk@gmail.com                     |
 //+------------------------------------------------------------------+
-#property copyright "Copyright 2024, Your Company Ltd"
-#property link      "https://www.mql5.com"
+#property copyright "jason.w.rusk@gmail.com"
 
 #ifndef UTILS_MQH
 #define UTILS_MQH
