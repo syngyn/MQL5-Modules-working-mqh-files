@@ -6,9 +6,9 @@
 #ifndef TRADEMANAGER_MQH
 #define TRADEMANAGER_MQH
 
-#include <Trade\Trade.mqh>
-#include <Trade\PositionInfo.mqh>
-#include <Trade\OrderInfo.mqh>
+#include <Trade/Trade.mqh>
+#include <Trade/PositionInfo.mqh>
+#include <Trade/OrderInfo.mqh>
 
 //+------------------------------------------------------------------+
 //| Trade Manager Class                                              |
@@ -19,33 +19,33 @@ private:
     CTrade            m_trade;
     CPositionInfo     m_position;
     COrderInfo        m_order;
-    
+
     int               m_magic_number;
     int               m_slippage;
     string            m_symbol;
-    
+
 public:
     // Constructor
     CTradeManager();
     // Destructor
     ~CTradeManager();
-    
+
     // Initialization
     bool              Initialize(int magic_number, int slippage);
-    
+
     // Position management
     bool              OpenBuy(double lot_size, double sl = 0, double tp = 0, string comment = "");
     bool              OpenSell(double lot_size, double sl = 0, double tp = 0, string comment = "");
     bool              ClosePosition(ulong ticket);
     bool              CloseAllPositions();
     bool              ModifyPosition(ulong ticket, double sl, double tp);
-    
+
     // Position information
     int               GetOpenPositions(ENUM_POSITION_TYPE type = POSITION_TYPE_BUY);
     int               GetTotalPositions();
     double            GetPositionProfit();
     double            GetPositionVolume(ENUM_POSITION_TYPE type);
-    
+
     // Order management
     bool              PlaceBuyLimit(double price, double lot_size, double sl = 0, double tp = 0);
     bool              PlaceSellLimit(double price, double lot_size, double sl = 0, double tp = 0);
@@ -53,10 +53,10 @@ public:
     bool              PlaceSellStop(double price, double lot_size, double sl = 0, double tp = 0);
     bool              DeleteOrder(ulong ticket);
     bool              DeleteAllOrders();
-    
+
     // Trailing stop
     bool              TrailingStop(int trailing_distance);
-    
+
     // Utility functions
     double            NormalizePrice(double price);
     double            NormalizeLots(double lots);
@@ -90,11 +90,11 @@ bool CTradeManager::Initialize(int magic_number, int slippage)
     m_magic_number = magic_number;
     m_slippage = slippage;
     m_symbol = Symbol();
-    
+
     // Set magic number for trade object
     m_trade.SetExpertMagicNumber(m_magic_number);
     m_trade.SetDeviationInPoints(m_slippage);
-    
+
     return true;
 }
 
@@ -104,17 +104,17 @@ bool CTradeManager::Initialize(int magic_number, int slippage)
 bool CTradeManager::OpenBuy(double lot_size, double sl = 0, double tp = 0, string comment = "")
 {
     lot_size = NormalizeLots(lot_size);
-    
+
     if(sl > 0) sl = NormalizePrice(sl);
     if(tp > 0) tp = NormalizePrice(tp);
-    
+
     if(comment == "") comment = "Buy " + m_symbol;
-    
+
     bool result = m_trade.Buy(lot_size, m_symbol, 0, sl, tp, comment);
-    
+
     if(!result)
         Print("Buy order failed: ", m_trade.ResultRetcodeDescription());
-    
+
     return result;
 }
 
@@ -124,17 +124,17 @@ bool CTradeManager::OpenBuy(double lot_size, double sl = 0, double tp = 0, strin
 bool CTradeManager::OpenSell(double lot_size, double sl = 0, double tp = 0, string comment = "")
 {
     lot_size = NormalizeLots(lot_size);
-    
+
     if(sl > 0) sl = NormalizePrice(sl);
     if(tp > 0) tp = NormalizePrice(tp);
-    
+
     if(comment == "") comment = "Sell " + m_symbol;
-    
+
     bool result = m_trade.Sell(lot_size, m_symbol, 0, sl, tp, comment);
-    
+
     if(!result)
         Print("Sell order failed: ", m_trade.ResultRetcodeDescription());
-    
+
     return result;
 }
 
@@ -145,12 +145,12 @@ bool CTradeManager::ClosePosition(ulong ticket)
 {
     if(!m_position.SelectByTicket(ticket))
         return false;
-    
+
     bool result = m_trade.PositionClose(ticket);
-    
+
     if(!result)
         Print("Close position failed: ", m_trade.ResultRetcodeDescription());
-    
+
     return result;
 }
 
@@ -160,7 +160,7 @@ bool CTradeManager::ClosePosition(ulong ticket)
 bool CTradeManager::CloseAllPositions()
 {
     bool result = true;
-    
+
     for(int i = PositionsTotal() - 1; i >= 0; i--)
     {
         if(m_position.SelectByIndex(i))
@@ -172,7 +172,7 @@ bool CTradeManager::CloseAllPositions()
             }
         }
     }
-    
+
     return result;
 }
 
@@ -182,12 +182,12 @@ bool CTradeManager::CloseAllPositions()
 int CTradeManager::GetOpenPositions(ENUM_POSITION_TYPE type = POSITION_TYPE_BUY)
 {
     int count = 0;
-    
+
     for(int i = 0; i < PositionsTotal(); i++)
     {
         if(m_position.SelectByIndex(i))
         {
-            if(m_position.Symbol() == m_symbol && 
+            if(m_position.Symbol() == m_symbol &&
                m_position.Magic() == m_magic_number &&
                m_position.PositionType() == type)
             {
@@ -195,7 +195,7 @@ int CTradeManager::GetOpenPositions(ENUM_POSITION_TYPE type = POSITION_TYPE_BUY)
             }
         }
     }
-    
+
     return count;
 }
 
@@ -213,7 +213,7 @@ int CTradeManager::GetTotalPositions()
 double CTradeManager::GetPositionProfit()
 {
     double total_profit = 0;
-    
+
     for(int i = 0; i < PositionsTotal(); i++)
     {
         if(m_position.SelectByIndex(i))
@@ -224,7 +224,7 @@ double CTradeManager::GetPositionProfit()
             }
         }
     }
-    
+
     return total_profit;
 }
 
@@ -236,24 +236,24 @@ bool CTradeManager::TrailingStop(int trailing_distance)
     bool result = true;
     double point = SymbolInfoDouble(m_symbol, SYMBOL_POINT);
     int digits = (int)SymbolInfoInteger(m_symbol, SYMBOL_DIGITS);
-    
+
     for(int i = 0; i < PositionsTotal(); i++)
     {
         if(!m_position.SelectByIndex(i))
             continue;
-            
+
         if(m_position.Symbol() != m_symbol || m_position.Magic() != m_magic_number)
             continue;
-        
+
         double current_price;
         double new_sl = 0;
-        
+
         if(m_position.PositionType() == POSITION_TYPE_BUY)
         {
             current_price = SymbolInfoDouble(m_symbol, SYMBOL_BID);
             new_sl = current_price - trailing_distance * point;
             new_sl = NormalizeDouble(new_sl, digits);
-            
+
             if(new_sl > m_position.StopLoss() || m_position.StopLoss() == 0)
             {
                 if(!m_trade.PositionModify(m_position.Ticket(), new_sl, m_position.TakeProfit()))
@@ -265,7 +265,7 @@ bool CTradeManager::TrailingStop(int trailing_distance)
             current_price = SymbolInfoDouble(m_symbol, SYMBOL_ASK);
             new_sl = current_price + trailing_distance * point;
             new_sl = NormalizeDouble(new_sl, digits);
-            
+
             if(new_sl < m_position.StopLoss() || m_position.StopLoss() == 0)
             {
                 if(!m_trade.PositionModify(m_position.Ticket(), new_sl, m_position.TakeProfit()))
@@ -273,7 +273,7 @@ bool CTradeManager::TrailingStop(int trailing_distance)
             }
         }
     }
-    
+
     return result;
 }
 
@@ -294,10 +294,10 @@ double CTradeManager::NormalizeLots(double lots)
     double lot_step = SymbolInfoDouble(m_symbol, SYMBOL_VOLUME_STEP);
     double min_lot = SymbolInfoDouble(m_symbol, SYMBOL_VOLUME_MIN);
     double max_lot = SymbolInfoDouble(m_symbol, SYMBOL_VOLUME_MAX);
-    
+
     lots = MathMax(lots, min_lot);
     lots = MathMin(lots, max_lot);
-    
+
     return NormalizeDouble(lots / lot_step, 0) * lot_step;
 }
 
@@ -307,7 +307,6 @@ double CTradeManager::NormalizeLots(double lots)
 === INTEGRATION INSTRUCTIONS FOR EA ===
 
 1. Add this line to your EA includes:
-   #include "TradeManager.mqh"
 
 2. Declare global variable in your EA:
    CTradeManager *g_TradeManager;
@@ -335,7 +334,4 @@ double CTradeManager::NormalizeLots(double lots)
    - Apply trailing stop: g_TradeManager.TrailingStop(50);
 
 6. Required MQL5 includes (add to EA if not already present):
-   #include <Trade\Trade.mqh>
-   #include <Trade\PositionInfo.mqh>
-   #include <Trade\OrderInfo.mqh>
 */

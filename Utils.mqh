@@ -17,16 +17,16 @@ private:
     datetime          m_last_bar_time;          // Last bar time for new bar detection
     string            m_symbol;                 // Current symbol
     ENUM_TIMEFRAMES   m_timeframe;              // Current timeframe
-    
+
 public:
     // Constructor
     CUtils();
-    // Destructor  
+    // Destructor
     ~CUtils();
-    
+
     // Initialization
     bool              Initialize();
-    
+
     // Time functions
     bool              IsNewBar();
     bool              IsNewBar(string symbol, ENUM_TIMEFRAMES timeframe);
@@ -36,7 +36,7 @@ public:
     datetime          StringToTime(string time_str);
     int               GetDayOfWeek();
     bool              IsWeekend();
-    
+
     // Price functions
     double            NormalizePrice(double price);
     double            NormalizePrice(double price, string symbol);
@@ -46,14 +46,14 @@ public:
     double            GetPoint(string symbol);
     double            PipsToPrice(double pips);
     double            PriceToPips(double price_diff);
-    
+
     // Lot size functions
     double            NormalizeLots(double lots);
     double            NormalizeLots(double lots, string symbol);
     double            GetMinLot();
     double            GetMaxLot();
     double            GetLotStep();
-    
+
     // Price calculation functions
     double            GetBid();
     double            GetAsk();
@@ -61,7 +61,7 @@ public:
     double            GetSpreadInPips();
     double            CalculateDistance(double price1, double price2);
     double            CalculateDistanceInPips(double price1, double price2);
-    
+
     // Validation functions
     bool              IsValidPrice(double price);
     bool              IsValidLots(double lots);
@@ -69,49 +69,49 @@ public:
     bool              IsValidTakeProfit(double entry_price, double tp_price, ENUM_ORDER_TYPE order_type);
     bool              IsSymbolTradeable();
     bool              IsMarketClosed();
-    
+
     // String functions
     string            DoubleToString(double value, int digits = 2);
     string            IntToString(int value);
     string            BoolToString(bool value);
     string            PadString(string str, int length, string pad_char = " ");
-    
+
     // Array functions
     void              ArrayPrint(double &array[], int count = 10, string name = "Array");
     double            ArraySum(double &array[], int start = 0, int count = WHOLE_ARRAY);
     double            ArrayAverage(double &array[], int start = 0, int count = WHOLE_ARRAY);
     double            ArrayMin(double &array[], int start = 0, int count = WHOLE_ARRAY);
     double            ArrayMax(double &array[], int start = 0, int count = WHOLE_ARRAY);
-    
+
     // File functions
     bool              WriteToFile(string filename, string content, bool append = true);
     string            ReadFromFile(string filename);
     bool              FileExists(string filename);
     bool              DeleteFile(string filename);
-    
+
     // Math functions
     double            RoundToStep(double value, double step);
     double            Percentage(double part, double whole);
     bool              IsEqual(double a, double b, double tolerance = 0.00001);
     int               RandomInt(int min_val, int max_val);
     double            RandomDouble(double min_val, double max_val);
-    
+
     // Alert functions
     void              SendAlert(string message);
     void              SendEmail(string subject, string message);
     void              PlaySound(string sound_file = "alert.wav");
     void              ShowComment(string text);
-    
+
     // Debug functions
     void              DebugPrint(string message, bool show_time = true);
     void              PrintAccountInfo();
     void              PrintSymbolInfo();
     void              PrintMarketInfo();
-    
+
     // Conversion functions
     ENUM_ORDER_TYPE   PositionTypeToOrderType(ENUM_POSITION_TYPE pos_type);
     ENUM_POSITION_TYPE OrderTypeToPositionType(ENUM_ORDER_TYPE order_type);
-    
+
 private:
     void              UpdateLastBarTime();
 };
@@ -142,7 +142,7 @@ bool CUtils::Initialize()
     m_symbol = Symbol();
     m_timeframe = Period();
     UpdateLastBarTime();
-    
+
     Print("Utils initialized for ", m_symbol, " ", ::EnumToString(m_timeframe));
     return true;
 }
@@ -153,13 +153,13 @@ bool CUtils::Initialize()
 bool CUtils::IsNewBar()
 {
     datetime current_time = iTime(m_symbol, m_timeframe, 0);
-    
+
     if(current_time != m_last_bar_time)
     {
         m_last_bar_time = current_time;
         return true;
     }
-    
+
     return false;
 }
 
@@ -171,7 +171,7 @@ bool CUtils::IsNewBar(string symbol, ENUM_TIMEFRAMES timeframe)
     static datetime last_times[];
     static string symbols[];
     static ENUM_TIMEFRAMES timeframes[];
-    
+
     // Find existing entry
     int index = -1;
     for(int i = 0; i < ArraySize(symbols); i++)
@@ -182,9 +182,9 @@ bool CUtils::IsNewBar(string symbol, ENUM_TIMEFRAMES timeframe)
             break;
         }
     }
-    
+
     datetime current_time = iTime(symbol, timeframe, 0);
-    
+
     // If not found, add new entry
     if(index == -1)
     {
@@ -192,20 +192,20 @@ bool CUtils::IsNewBar(string symbol, ENUM_TIMEFRAMES timeframe)
         ArrayResize(last_times, index + 1);
         ArrayResize(symbols, index + 1);
         ArrayResize(timeframes, index + 1);
-        
+
         symbols[index] = symbol;
         timeframes[index] = timeframe;
         last_times[index] = current_time;
         return true;
     }
-    
+
     // Check if new bar
     if(current_time != last_times[index])
     {
         last_times[index] = current_time;
         return true;
     }
-    
+
     return false;
 }
 
@@ -290,10 +290,10 @@ double CUtils::NormalizeLots(double lots)
     double lot_step = SymbolInfoDouble(m_symbol, SYMBOL_VOLUME_STEP);
     double min_lot = SymbolInfoDouble(m_symbol, SYMBOL_VOLUME_MIN);
     double max_lot = SymbolInfoDouble(m_symbol, SYMBOL_VOLUME_MAX);
-    
+
     lots = MathMax(lots, min_lot);
     lots = MathMin(lots, max_lot);
-    
+
     return NormalizeDouble(lots / lot_step, 0) * lot_step;
 }
 
@@ -360,7 +360,7 @@ bool CUtils::IsValidLots(double lots)
 {
     double min_lot = SymbolInfoDouble(m_symbol, SYMBOL_VOLUME_MIN);
     double max_lot = SymbolInfoDouble(m_symbol, SYMBOL_VOLUME_MAX);
-    
+
     return (lots >= min_lot && lots <= max_lot && lots > 0);
 }
 
@@ -395,16 +395,16 @@ void CUtils::ArrayPrint(double &array[], int count = 10, string name = "Array")
 {
     int size = ArraySize(array);
     count = MathMin(count, size);
-    
+
     string output = name + "[" + IntToString(size) + "]: ";
     for(int i = 0; i < count; i++)
     {
         output += DoubleToString(array[i], 5);
         if(i < count - 1) output += ", ";
     }
-    
+
     if(count < size) output += "...";
-    
+
     Print(output);
 }
 
@@ -450,7 +450,7 @@ void CUtils::DebugPrint(string message, bool show_time = true)
     string output = "";
     if(show_time)
         output = TimeToString(TimeCurrent(), true) + ": ";
-    
+
     output += message;
     Print(output);
 }
@@ -546,7 +546,6 @@ bool CUtils::IsWeekend()
 === INTEGRATION INSTRUCTIONS FOR EA ===
 
 1. Add this line to your EA includes:
-   #include "Utils.mqh"
 
 2. Declare global variable in your EA:
    CUtils *g_Utils;
