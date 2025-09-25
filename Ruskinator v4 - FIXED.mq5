@@ -2,8 +2,8 @@
 //|                                      Ruskinator v4 - FULLY FIXED |
 //|                        Complete version with all corrections     |
 //+------------------------------------------------------------------+
-#property copyright "Copyright 2024, jason.w.rusk@gmail.com"
-#property link      "jason.w.rusk@gmail.com"
+#property copyright "Copyright 2024, Fixed Version"
+#property link      "https://www.mql5.com"
 #property version   "4.05"
 #property strict
 

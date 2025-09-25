@@ -1032,6 +1032,286 @@ void CRiskManager::CalculateAdvancedMetrics()
     // Calculate additional risk metrics like Sharpe ratio, etc.
     // Implementation would depend on available historical data
 }
+//+------------------------------------------------------------------+
+//| MISSING IMPLEMENTATIONS - Add these to RiskManager.mqh          |
+//+------------------------------------------------------------------+
+
+//+------------------------------------------------------------------+
+//| Fixed lot size method                                            |
+//+------------------------------------------------------------------+
+double CRiskManager::FixedLotSize(double lot_size)
+{
+    return NormalizeLots(lot_size);
+}
+
+//+------------------------------------------------------------------+
+//| Percent risk sizing method                                       |
+//+------------------------------------------------------------------+
+double CRiskManager::PercentRiskSizing(double stop_loss_points)
+{
+    if(stop_loss_points <= 0)
+        return m_min_lot_per_trade;
+    
+    double risk_amount = CalculateRiskAmount();
+    return CalculateLotSizeByRisk(risk_amount, stop_loss_points);
+}
+
+//+------------------------------------------------------------------+
+//| Volatility based sizing                                          |
+//+------------------------------------------------------------------+
+double CRiskManager::VolatilityBasedSizing()
+{
+    double volatility = CalculateVolatility();
+    if(volatility <= 0)
+        return EquityBasedSizing();
+    
+    double base_size = EquityBasedSizing();
+    double volatility_factor = 0.02 / volatility; // Inverse relationship
+    
+    return NormalizeLots(base_size * volatility_factor);
+}
+
+//+------------------------------------------------------------------+
+//| Calculate maximum lot size                                        |
+//+------------------------------------------------------------------+
+double CRiskManager::CalculateMaxLotSize()
+{
+    double max_risk = CalculateRiskAmount() * 2.0; // Allow 2x normal risk for max
+    double max_lot_broker = SymbolInfoDouble(m_symbol, SYMBOL_VOLUME_MAX);
+    
+    return MathMin(max_risk / 10000.0, max_lot_broker); // Simplified calculation
+}
+
+//+------------------------------------------------------------------+
+//| Calculate optimal lot size with TP/SL                           |
+//+------------------------------------------------------------------+
+double CRiskManager::CalculateOptimalLotSize(double stop_loss_points, double take_profit_points)
+{
+    if(stop_loss_points <= 0)
+        return EquityBasedSizing();
+    
+    double risk_amount = CalculateRiskAmount();
+    double optimal_lot = CalculateLotSizeByRisk(risk_amount, stop_loss_points);
+    
+    // Adjust based on risk/reward ratio if TP is provided
+    if(take_profit_points > 0)
+    {
+        double rr_ratio = take_profit_points / stop_loss_points;
+        if(rr_ratio < 1.0) // Poor risk/reward
+            optimal_lot *= 0.5;
+        else if(rr_ratio > 2.0) // Good risk/reward
+            optimal_lot *= 1.2;
+    }
+    
+    return NormalizeLots(optimal_lot);
+}
+
+//+------------------------------------------------------------------+
+//| Check correlation limits                                         |
+//+------------------------------------------------------------------+
+bool CRiskManager::CheckCorrelationLimits()
+{
+    // Simplified implementation - return true for now
+    // In a full implementation, this would check correlation between symbols
+    return true;
+}
+
+//+------------------------------------------------------------------+
+//| Calculate correlation between symbols                            |
+//+------------------------------------------------------------------+
+double CRiskManager::CalculateCorrelation(string symbol1, string symbol2)
+{
+    // Simplified implementation - return 0 (no correlation)
+    // In a full implementation, this would calculate actual price correlation
+    return 0.0;
+}
+
+//+------------------------------------------------------------------+
+//| Calculate current volatility                                     |
+//+------------------------------------------------------------------+
+double CRiskManager::CalculateVolatility()
+{
+    // Simple ATR-based volatility calculation
+    int atr_handle = iATR(m_symbol, PERIOD_D1, 14);
+    if(atr_handle == INVALID_HANDLE)
+        return 0.02; // Default volatility
+    
+    double atr_buffer[1];
+    if(CopyBuffer(atr_handle, 0, 0, 1, atr_buffer) != 1)
+    {
+        IndicatorRelease(atr_handle);
+        return 0.02;
+    }
+    
+    IndicatorRelease(atr_handle);
+    
+    double current_price = SymbolInfoDouble(m_symbol, SYMBOL_BID);
+    return (current_price > 0) ? atr_buffer[0] / current_price : 0.02;
+}
+
+//+------------------------------------------------------------------+
+//| Get Sharpe ratio                                                 |
+//+------------------------------------------------------------------+
+double CRiskManager::GetSharpeRatio()
+{
+    if(m_total_trades < 10)
+        return 0;
+    
+    double avg_return = m_total_profit / m_total_trades;
+    // Simplified Sharpe calculation (would need proper standard deviation in real implementation)
+    double volatility = MathAbs(m_avg_loss) > 0 ? MathAbs(m_avg_loss) : 1.0;
+    
+    return avg_return / volatility;
+}
+
+//+------------------------------------------------------------------+
+//| Get maximum consecutive losses                                   |
+//+------------------------------------------------------------------+
+double CRiskManager::GetMaxConsecutiveLosses()
+{
+    return m_risk_metrics.consecutive_losses;
+}
+
+//+------------------------------------------------------------------+
+//| Get recovery factor                                              |
+//+------------------------------------------------------------------+
+double CRiskManager::GetRecoveryFactor()
+{
+    double max_dd = GetCurrentDrawdown();
+    return (max_dd > 0) ? m_total_profit / max_dd : 0;
+}
+
+//+------------------------------------------------------------------+
+//| Set risk percent with validation                                |
+//+------------------------------------------------------------------+
+void CRiskManager::SetRiskPercent(double risk_percent)
+{
+    if(risk_percent > 0 && risk_percent <= 50)
+        m_risk_percent = risk_percent;
+    else
+        SetLastError("Invalid risk percent: " + DoubleToString(risk_percent, 2));
+}
+
+//+------------------------------------------------------------------+
+//| Set max drawdown with validation                                |
+//+------------------------------------------------------------------+
+void CRiskManager::SetMaxDrawdown(double max_drawdown)
+{
+    if(max_drawdown > 0 && max_drawdown <= 100)
+        m_max_drawdown = max_drawdown;
+    else
+        SetLastError("Invalid max drawdown: " + DoubleToString(max_drawdown, 2));
+}
+
+//+------------------------------------------------------------------+
+//| Set max trades per day                                           |
+//+------------------------------------------------------------------+
+void CRiskManager::SetMaxTradesPerDay(int max_trades)
+{
+    if(max_trades > 0)
+        m_daily_limits.max_trades = max_trades;
+    else
+        SetLastError("Invalid max trades per day: " + IntegerToString(max_trades));
+}
+
+//+------------------------------------------------------------------+
+//| Set daily loss limit                                             |
+//+------------------------------------------------------------------+
+void CRiskManager::SetDailyLossLimit(double loss_limit)
+{
+    if(loss_limit > 0)
+        m_daily_limits.max_loss_amount = loss_limit;
+    else
+        SetLastError("Invalid daily loss limit: " + DoubleToString(loss_limit, 2));
+}
+
+//+------------------------------------------------------------------+
+//| Trade modification tracking                                      |
+//+------------------------------------------------------------------+
+void CRiskManager::OnTradeModified(double new_risk_amount)
+{
+    // Track trade modifications for risk monitoring
+    LogRiskEvent("TRADE_MODIFIED", "New risk: $" + DoubleToString(new_risk_amount, 2));
+}
+
+//+------------------------------------------------------------------+
+//| Print performance report                                         |
+//+------------------------------------------------------------------+
+void CRiskManager::PrintPerformanceReport()
+{
+    Print("=== RISK MANAGER PERFORMANCE REPORT ===");
+    Print("Total Trades: ", m_total_trades);
+    Print("Win Rate: ", DoubleToString(GetWinRate(), 1), "%");
+    Print("Profit Factor: ", DoubleToString(GetProfitFactor(), 2));
+    Print("Sharpe Ratio: ", DoubleToString(GetSharpeRatio(), 2));
+    Print("Expectancy: $", DoubleToString(GetExpectancy(), 2));
+    Print("Recovery Factor: ", DoubleToString(GetRecoveryFactor(), 2));
+    Print("Max Consecutive Losses: ", GetMaxConsecutiveLosses());
+    Print("Current Drawdown: ", DoubleToString(GetCurrentDrawdown(), 2), "%");
+    Print("Max Drawdown Reached: ", DoubleToString(m_risk_metrics.max_drawdown, 2), "%");
+    Print("=======================================");
+}
+
+//+------------------------------------------------------------------+
+//| Print risk metrics                                               |
+//+------------------------------------------------------------------+
+void CRiskManager::PrintRiskMetrics()
+{
+    Print("=== CURRENT RISK METRICS ===");
+    Print("Risk per Trade: ", DoubleToString(GetRiskPercent(), 2), "%");
+    Print("Current Drawdown: ", DoubleToString(m_risk_metrics.current_drawdown, 2), "%");
+    Print("Daily Loss: $", DoubleToString(m_risk_metrics.daily_loss, 2));
+    Print("Consecutive Losses: ", m_risk_metrics.consecutive_losses);
+    Print("Risk/Reward Ratio: ", DoubleToString(m_risk_metrics.risk_reward_ratio, 2));
+    Print("Emergency Mode: ", (m_emergency_mode ? "ACTIVE" : "INACTIVE"));
+    Print("============================");
+}
+
+//+------------------------------------------------------------------+
+//| Validate risk level                                              |
+//+------------------------------------------------------------------+
+bool CRiskManager::ValidateRiskLevel()
+{
+    switch(m_risk_level)
+    {
+        case RISK_CONSERVATIVE:
+        case RISK_MODERATE:
+        case RISK_AGGRESSIVE:
+        case RISK_EXTREME:
+            return true;
+        default:
+            SetLastError("Invalid risk level");
+            return false;
+    }
+}
+
+//+------------------------------------------------------------------+
+//| Apply risk level settings                                        |
+//+------------------------------------------------------------------+
+void CRiskManager::ApplyRiskLevelSettings()
+{
+    switch(m_risk_level)
+    {
+        case RISK_CONSERVATIVE:
+            m_max_lot_per_trade = MathMin(m_max_lot_per_trade, 1.0);
+            m_correlation_limit = 0.5;
+            m_exposure_limit = 20.0;
+            break;
+        case RISK_MODERATE:
+            m_max_lot_per_trade = MathMin(m_max_lot_per_trade, 5.0);
+            m_correlation_limit = 0.7;
+            m_exposure_limit = 30.0;
+            break;
+        case RISK_AGGRESSIVE:
+            m_max_lot_per_trade = MathMin(m_max_lot_per_trade, 10.0);
+            m_correlation_limit = 0.8;
+            m_exposure_limit = 50.0;
+            break;
+        case RISK_EXTREME:
+            // No additional limits
+            break;
+    }
+}
 
 #endif
 
